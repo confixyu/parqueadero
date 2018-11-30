@@ -3,6 +3,7 @@ package com.example.confix.parqueadero;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -21,6 +22,7 @@ public class MainActivity extends AppCompatActivity {
 
     EditText txt_search, txt_license;
     Button btn_search, btn_add, btn_delete;
+    List<Vehicle> list;
     ListView list_vehicle;
 
     @Override
@@ -37,7 +39,9 @@ public class MainActivity extends AppCompatActivity {
 
         list_vehicle = findViewById(R.id.list_vehicle);
 
-        readAll();
+        list = readAll();
+        ArrayAdapter<Vehicle> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, list);
+        list_vehicle.setAdapter(adapter);
 
         btn_search.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -57,27 +61,36 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public void readAll(){
-        List<String> arraylist = new ArrayList<String>();
+    public List<Vehicle> readAll(){
+        List<Vehicle> arraylist = new ArrayList<>();
 
-        BaseDatos baseDatosIntc = new BaseDatos(this, "Polo", null, 1);
-        SQLiteDatabase BD = baseDatosIntc.getReadableDatabase();
+        BaseDatos baseDatosIntc = new BaseDatos(this);
+        SQLiteDatabase db = baseDatosIntc.getReadableDatabase();
 
-        Cursor row = BD.rawQuery("SELECT * FROM VEHICLES", null);
+        String [] col = {"license",
+                "time_in",
+                "time_out"};
 
-        while(row.moveToNext()) {
-            arraylist.add(row.getString(0));
+        Cursor c = db.query("vehicles", col,
+                null, null, null, null, null);
+
+        while(c.moveToNext()) {
+            Vehicle vehicle = new Vehicle();
+            vehicle.setLicense(c.getString(0));
+            vehicle.setTime_in(c.getString(1));
+            vehicle.setTime_out(c.getString(2));
+
+            arraylist.add(vehicle);
         }
-        txt_search.setText(arraylist.toString());
 
-        row.close();
+        c.close();
 
-        BD.close();
+        return arraylist;
     }
 
 
     public void getById(String searchId){
-        BaseDatos baseDatosIntc = new BaseDatos(this, "Polo", null, 1);
+        BaseDatos baseDatosIntc = new BaseDatos(this);
         SQLiteDatabase BD = baseDatosIntc.getReadableDatabase();
 
         Cursor row = BD.rawQuery("SELECT * FROM VEHICLES WHERE id=" + searchId, null);
@@ -92,14 +105,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void save(String license, String time_in){
-        BaseDatos baseDatosIntec = new BaseDatos(  this,"polo", null, 1 );
+        BaseDatos baseDatosIntec = new BaseDatos(  this);
         SQLiteDatabase BD = baseDatosIntec.getWritableDatabase();
 
         ContentValues v1 = new ContentValues();
         v1.put("license", license);
         v1.put("time_in", time_in);
 
-        Long valor = BD.insert( "VEHICLES",null, v1);
+        Long valor = BD.insert( "vehicles",null, v1);
         Toast.makeText(this, "Guardado!"+valor, Toast.LENGTH_SHORT).show();
 
         txt_license.setText("");
